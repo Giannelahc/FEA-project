@@ -2,8 +2,9 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Homepage from './pages/HomePage';
-import PlaylistPage from './pages/PlaylistPage';
-import ProfilePage from './pages/ProfilePage';
+import LoginPage from './pages/LoginPage';
+import UserProfilePage from './pages/UserProfilePage';
+import ProfileManagementPage from './pages/ProfileManagementPage';
 import SearchResultPage from './pages/SearchResultPage';
 
 function App() {
@@ -11,8 +12,9 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<Homepage />} />
-        <Route path="/playlist/:id" element={<PlaylistPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/user-profile" element={<UserProfilePage />} />
+        <Route path="/profile-management" element={<ProfileManagementPage />} />
         <Route path="/search" element={<SearchResultPage />} />
       </Routes>
     </Router>
