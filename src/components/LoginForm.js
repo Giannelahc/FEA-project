@@ -15,7 +15,7 @@ function LoginForm({ navigate }) {
         data.append('password', password);
 
         try {
-            const response = await fetch('https://localhost:8443/apiman-gateway/default/list-products/1.0', {
+            const response = await fetch('http://localhost:8080/auth/realms/apiman/protocol/openid-connect/token', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
@@ -28,12 +28,12 @@ function LoginForm({ navigate }) {
             }
 
             const result = await response.json();
-            console.log('Access token:', result.access_token);
 
             // opential：save token to localstorage or context
             localStorage.setItem('token', result.access_token);
+            localStorage.setItem('refresh_token', result.refresh_token);
 
-            navigate('/home');
+            navigate('/products');
 
         } catch (error) {
             alert('Login failed: ' + error.message);
@@ -44,8 +44,8 @@ function LoginForm({ navigate }) {
         <form onSubmit={handleLogin}>
             <h3>Login</h3>
             <input
-                type="email"
-                placeholder="Email"
+                type="text"
+                placeholder="Username"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
