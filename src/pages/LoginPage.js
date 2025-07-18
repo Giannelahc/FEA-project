@@ -11,8 +11,8 @@ function LoginPage() {
         <div>
             {/* 切换按钮 */}
             <div>
-                <button onClick={() => setActiveTab('login')}>登录</button>
-                <button onClick={() => setActiveTab('register')}>注册</button>
+                <button onClick={() => setActiveTab('login')}>Login</button>
+                <button onClick={() => setActiveTab('register')}>Register</button>
             </div>
 
             {/* 表单区域 */}
