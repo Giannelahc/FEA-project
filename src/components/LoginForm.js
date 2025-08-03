@@ -1,26 +1,24 @@
-import React, { useState } from 'react';
-
+import React, { useState, useContext } from 'react';
+import { getKeycloak } from '../keycloak';
+import { Input, Button, Flex } from 'antd';
 function LoginForm({ navigate }) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    // const { setAuthenticated } = useContext(AuthContext);
 
     const handleLogin = async (e) => {
         e.preventDefault();
 
-        const data = new URLSearchParams();
-        data.append('grant_type', 'password');
-        data.append('client_id', 'main-client');
-        data.append('client_secret', '73363200-f84e-4100-848c-6e3127b9f58c');
-        data.append('username', email);
-        data.append('password', password);
-
         try {
-            const response = await fetch('https://localhost:8443/apiman-gateway/default/list-products/1.0', {
+            const response = await fetch('http://localhost:3001/auth/login', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Content-Type': 'application/json',
                 },
-                body: data.toString(),
+                body: JSON.stringify({
+                    email: email,
+                    password: password,
+                }),
             });
 
             if (!response.ok) {
@@ -28,12 +26,9 @@ function LoginForm({ navigate }) {
             }
 
             const result = await response.json();
-            console.log('Access token:', result.access_token);
+            console.log('Access token:', result.token);
 
-            // opential：save token to localstorage or context
-            localStorage.setItem('token', result.access_token);
-
-            navigate('/home');
+            navigate('/');
 
         } catch (error) {
             alert('Login failed: ' + error.message);
@@ -43,21 +38,13 @@ function LoginForm({ navigate }) {
     return (
         <form onSubmit={handleLogin}>
             <h3>Login</h3>
-            <input
-                type="email"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-            />
-            <input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-            />
-            <button type="submit">Login</button>
+            <Input placeholder="Email" onChange={(e) => setEmail(e.target.value)} required />
+
+            <Input.Password placeholder="password" onChange={(e) => setPassword(e.target.value)} required />
+
+            <Flex justify="center" style={{ marginTop: '20px' }}>
+                <Button type="primary" onClick={handleLogin}>Login</Button>
+            </Flex>
         </form>
     );
 }

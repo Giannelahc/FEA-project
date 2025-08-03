@@ -7,30 +7,35 @@ import UserProfilePage from './pages/UserProfilePage';
 import ProfileManagementPage from './pages/ProfileManagementPage';
 import SearchResultPage from './pages/SearchResultPage';
 import KeycloakProvider from "./components/KeycloakProvider";
-import keycloak from "./keycloak";
-
+import {getKeycloak} from "./keycloak";
+import Navbar from './components/Navbar';
 const PrivateRoute = ({ children }) => {
-  return keycloak.authenticated ? children : <Navigate to="/login" />;
+  return getKeycloak().authenticated ? children : <Navigate to="/login" />;
 }; 
 const App = () => {
   return (
-    <KeycloakProvider>
+    // <KeycloakProvider>
+    <div>
+      <Navbar />
       <Routes>
         <Route path="/" element={<Homepage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/user-profile" element={
-          <PrivateRoute> 
+          <PrivateRoute>
             <UserProfilePage />
           </PrivateRoute>
         } />
         <Route path="/profile-management" element={
-          <PrivateRoute> 
+          <PrivateRoute>
             <ProfileManagementPage />
           </PrivateRoute>
         } />
         <Route path="/search" element={<SearchResultPage />} />
       </Routes>
-    </KeycloakProvider>
+
+    </div>
+      
+    // </KeycloakProvider>
   );
 }
 

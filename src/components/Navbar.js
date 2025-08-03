@@ -1,15 +1,58 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 
+import { AppstoreOutlined, MailOutlined, SettingOutlined } from '@ant-design/icons';
+import { Menu } from 'antd';
+
+type MenuItem = Required<MenuProps>['items'][number];
+
+const items: MenuItem[] = [
+    {
+        key: 'mail',
+        icon: <MailOutlined />,
+        label: (
+            <a href="/"  rel="noopener noreferrer">
+                Home
+            </a>
+        ),
+    },
+    {
+        key: 'app',
+        icon: <AppstoreOutlined />,
+        label: (
+            <a href="/profile" rel="noopener noreferrer">
+                Profile
+            </a>
+        ),
+    },
+    {
+        key: 'SubMenu',
+        icon: <SettingOutlined />,
+        label: (
+            <a href="/search" rel="noopener noreferrer">
+                Search
+            </a>
+        ),
+    },
+    {
+        key: 'alipay',
+        label: (
+            <a href="/login" rel="noopener noreferrer">
+                Login
+            </a>
+        ),
+    },
+];
+
 function Navbar() {
-    return (
-        <nav>
-            <Link to="/">Home</Link> |{" "}
-            <Link to="/login">Login</Link> |{" "}
-            <Link to="/profile">Profile</Link> |{" "}
-            <Link to="/search?q=test">Search</Link>
-        </nav>
-    );
+    const [current, setCurrent] = useState('mail');
+
+    const onClick: MenuProps['onClick'] = (e) => {
+        console.log('click ', e);
+        setCurrent(e.key);
+    };
+
+    return <Menu onClick={onClick} selectedKeys={[current]} mode="horizontal" items={items} />;
 }
 
 export default Navbar;

@@ -1,13 +1,19 @@
+import { Input, Button, Flex } from 'antd';
+
 function RegisterForm() {
     return (
         <form>
             <h3>Register</h3>
-            <input type="text" placeholder="Username" required />
-            <input type="email" placeholder="Email" required />
-            <input type="password" placeholder="Password" required />
-            <button type="submit">Register</button>
+            <Input placeholder="Username" required />
+
+            <Input placeholder="Email" required />
+
+            <Input.Password placeholder="password" required />
+
+            <Flex justify="center" style={{ marginTop: '20px' }}>
+                <Button type="primary">Register</Button>
+            </Flex>
         </form>
     );
 }
 export default RegisterForm;
-  

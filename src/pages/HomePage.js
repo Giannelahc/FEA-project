@@ -1,6 +1,6 @@
 import { useSelector } from 'react-redux';
 import TweetCard from '../components/TweetCard';
-import Navbar from '../components/Navbar';
+
 
 const HomePage = () => {
   const user = useSelector((state) => state.auth.user);
@@ -8,7 +8,7 @@ const HomePage = () => {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <Navbar />
+      
       <div className="p-8">
         {user ? (
           <div className="text-center">
