@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { Input, Button, Flex } from 'antd';
+import { useDispatch } from 'react-redux';
+import { saveToken } from '../services/authService';
+import { loginSuccess } from '../slices/authSlice';
 function LoginForm({ navigate }) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     // const { setAuthenticated } = useContext(AuthContext);
-
+    const dispatch = useDispatch();
     const handleLogin = async (e) => {
         e.preventDefault();
 
@@ -26,6 +29,8 @@ function LoginForm({ navigate }) {
 
             const result = await response.json();
             console.log('Access token:', result.token);
+            dispatch(loginSuccess(result.token))
+            saveToken(result.token); //save token to local storage
 
             navigate('/');
 
@@ -35,9 +40,9 @@ function LoginForm({ navigate }) {
     };
 
     return (
-        <form onSubmit={handleLogin}>
+        <form onSubmit={handleLogin} style={{ maxWidth: 400, margin: '0 auto' }}>
             <h3>Login</h3>
-            <Input placeholder="Email" onChange={(e) => setEmail(e.target.value)} required />
+            <Input placeholder="Email" onChange={(e) => setEmail(e.target.value)} required style={{ marginBottom: '16px' }} />
 
             <Input.Password placeholder="password" onChange={(e) => setPassword(e.target.value)} required />
 

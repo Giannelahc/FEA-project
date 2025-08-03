@@ -2,11 +2,11 @@ import { Input, Button, Flex } from 'antd';
 
 function RegisterForm() {
     return (
-        <form>
+        <form style={{ maxWidth: 400, margin: '0 auto' }}>
             <h3>Register</h3>
-            <Input placeholder="Username" required />
+            <Input placeholder="Username" required style={{ marginBottom: '16px' }} />
 
-            <Input placeholder="Email" required />
+            <Input placeholder="Email" required style={{ marginBottom: '16px' }} />
 
             <Input.Password placeholder="password" required />
 
