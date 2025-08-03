@@ -1,12 +1,11 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import LoginForm from '../components/LoginForm';
 import RegisterForm from '../components/RegisterForm';
-import { Button, Flex, Tabs } from 'antd';
+import { Flex, Tabs } from 'antd';
 const { TabPane } = Tabs;
 
 function LoginPage() {
-    const [activeTab, setActiveTab] = useState('login');
     const navigate = useNavigate();
 
     return (

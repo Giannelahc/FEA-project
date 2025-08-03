@@ -1,5 +1,4 @@
-import React, { useState, useContext } from 'react';
-import { getKeycloak } from '../keycloak';
+import React, { useState } from 'react';
 import { Input, Button, Flex } from 'antd';
 function LoginForm({ navigate }) {
     const [email, setEmail] = useState('');
