@@ -41,11 +41,11 @@ function LoginForm({ navigate }) {
 
     return (
         <form onSubmit={handleLogin} style={{ maxWidth: 400, margin: '0 auto' }}>
-            <h3>Login</h3>
+            
             <Input placeholder="Email" onChange={(e) => setEmail(e.target.value)} required style={{ marginBottom: '16px' }} />
 
             <Input.Password placeholder="password" onChange={(e) => setPassword(e.target.value)} required />
-
+            
             <Flex justify="center" style={{ marginTop: '20px' }}>
                 <Button type="primary" onClick={handleLogin}>Login</Button>
             </Flex>
