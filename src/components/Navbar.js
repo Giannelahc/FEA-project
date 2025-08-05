@@ -1,24 +1,32 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { AppstoreOutlined, HomeOutlined, SearchOutlined } from '@ant-design/icons';
 import { Menu } from 'antd';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logoutSuccess } from '../slices/authSlice';
+
 type MenuItem = Required<MenuProps>['items'][number];
 
 function Navbar() {
-    const [current, setCurrent] = useState('mail');
+    const location = useLocation(); //get current path
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const isAuthenticated = useSelector((state) => state.auth.token!=null );
 
+    // map pathname -> menu key
+    const pathToKey: Record<string, string> = {
+        '/': 'home',
+        '/search': 'search',
+        '/profile': 'profile',
+        '/login': 'login',
+    };
+
+    const selectedKey = pathToKey[location.pathname] || '';
 
     const onClick: MenuProps['onClick'] = (e) => {
         if (e.key === 'logout') {
             dispatch(logoutSuccess());
             navigate('/login'); 
-        } else {
-            setCurrent(e.key);
         }
     };
     const items: MenuItem[] = [
@@ -47,7 +55,14 @@ function Navbar() {
                 label: <Link to="/login">Login</Link>,
             },
     ];
-    return <Menu onClick={onClick} selectedKeys={[current]} mode="horizontal" items={items} />;
+    return (
+        <Menu
+            onClick={onClick}
+            selectedKeys={[selectedKey]} // update selected key
+            mode="horizontal"
+            items={items}
+        />
+    );
 }
 
 export default Navbar;

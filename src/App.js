@@ -1,6 +1,7 @@
 // src/App.js
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
+import PrivateRoute from './components/PrivateRoute';
 import Homepage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import UserProfilePage from './pages/UserProfilePage';
@@ -14,7 +15,7 @@ const App = () => {
       <Routes>
         <Route path="/" element={<Homepage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/profile" element={<UserProfilePage />} />
+        <Route path="/profile" element={<PrivateRoute><UserProfilePage /></PrivateRoute>} />
         <Route path="/profile/edit" element={<ProfileManagementPage />} />
         <Route path="/search" element={<SearchResultPage />} />
       </Routes>
