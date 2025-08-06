@@ -38,13 +38,16 @@ export default function UserProfilePage() {
     const handleSave = async () => {
     try {
       const values = await form.validateFields(); // form validation
+      const cleaned = Object.fromEntries(// filter out empty strings
+        Object.entries(values).filter(([_, v]) => typeof v === 'string' && v.trim() !== '')
+      );
       const response = await fetch('http://localhost:3001/users/profile', {
         method: 'PATCH', 
         headers: {
           Authorization: `Bearer ${localStorage.getItem('jwt_token')}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ username: values.username }),
+        body: JSON.stringify( cleaned ),
       });
 
       const data = await response.json();
@@ -115,7 +118,9 @@ export default function UserProfilePage() {
           form={form}
           layout="vertical"
           initialValues={{
-            username: user.username
+            username: user.username,
+            contact: user.contact,
+            preference: user.preference,
           }}
         >
           <Form.Item
@@ -126,6 +131,22 @@ export default function UserProfilePage() {
             <Input />
           </Form.Item>
 
+          <Form.Item
+            label="Contact"
+            name="contact"
+            rules={[{ required: false }]}
+          >
+            <Input />
+          </Form.Item>
+
+          <Form.Item
+            label="Preference"
+            name="preference"
+            rules={[{ required: false }]}
+          >
+            <Input.TextArea rows={3} />
+          </Form.Item>
+
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <Button type="primary" onClick={handleSave}>Save</Button>
             <Button onClick={() => setEditing(false)}>Cancel</Button>
@@ -134,6 +155,10 @@ export default function UserProfilePage() {
       ) : (
         <div style={{ marginTop: '16px', color: 'gray' }}>
           Joined: {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
+          <br />
+          Contact: {user.contact || 'Not provided'}
+          <br />
+          Preference: {user.preference || 'Not specified'}
         </div>
       )}
     </Card>
