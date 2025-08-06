@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Input, Button, Flex, message } from 'antd';
-
+import { Input, Button, Flex } from 'antd';
+import { useMessageApi } from '../context/MessageContext';
 function RegisterForm() {
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [messageApi, contextHolder] = message.useMessage();
+    const messageApi = useMessageApi();
     const handleRegister = async (e) => {
         e.preventDefault();
         try{
@@ -38,7 +38,6 @@ function RegisterForm() {
     };
     return (
         <form onSubmit={handleRegister} style={{ maxWidth: 400, margin: '0 auto' }}>
-            {contextHolder}
             <Input placeholder="Username" value={username}
                 onChange={(e) => setUsername(e.target.value)} 
                 required style={{ marginBottom: '4px' }} />

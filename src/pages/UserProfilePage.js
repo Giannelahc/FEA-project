@@ -1,13 +1,15 @@
 // ProfilePage.jsx
-import { useEffect, useState } from 'react';
-import { Card, Avatar, Button, Spin, message, Form, Input } from 'antd';
+import { useEffect, useState, useCallback } from 'react';
+import { Card, Avatar, Button, Spin, Form, Input } from 'antd';
+import { useMessageApi } from '../context/MessageContext';
 
 export default function UserProfilePage() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [form] = Form.useForm(); 
-  const fetchProfile = async () => {
+  const messageApi = useMessageApi();
+  const fetchProfile = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch('http://localhost:3001/users/profile', {
@@ -25,16 +27,15 @@ export default function UserProfilePage() {
 
       setUser(data);
     } catch (err) {
-      message.error(err.message || 'Something went wrong');
+      messageApi.error(err.message || 'Something went wrong');
     } finally {
       setLoading(false);
     }
-  };
+  },[messageApi]);
 
   useEffect(() => {
     fetchProfile();
-  }, []);
-
+  }, [fetchProfile]);
     const handleSave = async () => {
     try {
       const values = await form.validateFields(); // form validation
@@ -56,11 +57,11 @@ export default function UserProfilePage() {
         throw new Error(data.message || 'Failed to update profile');
       }
 
-      message.success('Profile updated successfully');
+      messageApi.success('Profile updated successfully');
       setEditing(false);
       fetchProfile(); // refresh data
     } catch (err) {
-      message.error(err.message || 'Save failed');
+      messageApi.error(err.message || 'Save failed');
     }
   };
 

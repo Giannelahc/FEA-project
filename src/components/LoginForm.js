@@ -3,11 +3,13 @@ import { Input, Button, Flex } from 'antd';
 import { useDispatch } from 'react-redux';
 import { saveToken } from '../services/authService';
 import { loginSuccess } from '../slices/authSlice';
+import { useMessageApi } from '../context/MessageContext';
 function LoginForm({ navigate }) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     // const { setAuthenticated } = useContext(AuthContext);
     const dispatch = useDispatch();
+    const messageApi = useMessageApi();
     const handleLogin = async (e) => {
         e.preventDefault();
 
@@ -35,7 +37,10 @@ function LoginForm({ navigate }) {
             navigate('/');
 
         } catch (error) {
-            alert('Login failed: ' + error.message);
+            messageApi.error({
+                content: 'Login failed: ' + error.message,
+                key: 'login',
+            });
         }
     };
 

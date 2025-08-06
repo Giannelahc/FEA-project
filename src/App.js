@@ -8,9 +8,10 @@ import UserProfilePage from './pages/UserProfilePage';
 import ProfileManagementPage from './pages/ProfileManagementPage';
 import SearchResultPage from './pages/SearchResultPage';
 import Navbar from './components/Navbar';
+import { MessageProvider } from './context/MessageContext';
 const App = () => {
   return (
-    <div>
+    <MessageProvider>
       <Navbar />
       <Routes>
         <Route path="/" element={<Homepage />} />
@@ -19,7 +20,7 @@ const App = () => {
         <Route path="/profile/edit" element={<ProfileManagementPage />} />
         <Route path="/search" element={<SearchResultPage />} />
       </Routes>
-    </div>
+    </MessageProvider>
   );
 }
 
