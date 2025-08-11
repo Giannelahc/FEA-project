@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Input, Button, Flex } from 'antd';
 import { useDispatch } from 'react-redux';
-import { saveToken } from '../services/authService';
+import { saveToken, saveUser } from '../services/authService';
 import { loginSuccess } from '../slices/authSlice';
 import { useMessageApi } from '../context/MessageContext';
 function LoginForm({ navigate }) {
@@ -31,8 +31,9 @@ function LoginForm({ navigate }) {
 
             const result = await response.json();
             console.log('Access token:', result.token);
-            dispatch(loginSuccess(result.token))
+            dispatch(loginSuccess(result))
             saveToken(result.token); //save token to local storage
+            saveUser(result.user.username); //save user to local storage
 
             navigate('/');
 

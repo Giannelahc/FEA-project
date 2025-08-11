@@ -1,20 +1,20 @@
 import React from 'react';
-import { AppstoreOutlined, HomeOutlined, SearchOutlined } from '@ant-design/icons';
-import { Menu } from 'antd';
+import { AppstoreOutlined, HomeOutlined, SearchOutlined, UserOutlined } from '@ant-design/icons';
+import { Menu, Avatar } from 'antd';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logoutSuccess } from '../slices/authSlice';
 
-type MenuItem = Required<MenuProps>['items'][number];
-
 function Navbar() {
-    const location = useLocation(); //get current path
+    const location = useLocation();
     const navigate = useNavigate();
     const dispatch = useDispatch();
-    const isAuthenticated = useSelector((state) => state.auth.token!=null );
 
-    // map pathname -> menu key
-    const pathToKey: Record<string, string> = {
+    const isAuthenticated = useSelector((state) => state.auth.token !== null);
+    const user = useSelector((state) => state.auth.username);
+    const username = user || 'User';
+
+    const pathToKey = {
         '/': 'home',
         '/search': 'search',
         '/profile': 'profile',
@@ -23,45 +23,57 @@ function Navbar() {
 
     const selectedKey = pathToKey[location.pathname] || '';
 
-    const onClick: MenuProps['onClick'] = (e) => {
+    const onClick = (e) => {
         if (e.key === 'logout') {
             dispatch(logoutSuccess());
-            navigate('/login'); 
+            navigate('/login');
         }
     };
-    const items: MenuItem[] = [
-        {
-            key: 'home',
-            icon: <HomeOutlined />,
-            label: <Link to="/">Home</Link>,
-        },
-        {
-            key: 'search',
-            icon: <SearchOutlined />,
-            label: <Link to="/search">Search</Link>,
-        },
-        {
-            key: 'profile',
-            icon: <AppstoreOutlined />,
-            label: <Link to="/profile">Profile</Link>,
-        },
-        isAuthenticated
-            ? {
-                key: 'logout',
-                label: 'Logout',
-            }
-            : {
-                key: 'login',
-                label: <Link to="/login">Login</Link>,
-            },
-    ];
+
     return (
         <Menu
             onClick={onClick}
-            selectedKeys={[selectedKey]} // update selected key
+            selectedKeys={[selectedKey]}
             mode="horizontal"
-            items={items}
-        />
+            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+        >
+            {/* Left menu items */}
+            <div style={{ display: 'flex' }}>
+                <Menu.Item key="home" icon={<HomeOutlined />}>
+                    <Link to="/">Home</Link>
+                </Menu.Item>
+                <Menu.Item key="search" icon={<SearchOutlined />}>
+                    <Link to="/search">Search</Link>
+                </Menu.Item>
+                {!isAuthenticated && (
+                    <Menu.Item key="login">
+                        <Link to="/login">Login</Link>
+                    </Menu.Item>
+                )}
+            </div>
+
+            {/* Right user avatar */}
+            {isAuthenticated && (
+                <Menu.SubMenu
+                    key="user"
+                    title={
+                        <span
+                            onClick={() => navigate('/profile')}
+                            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                        >
+                            <Avatar
+                                style={{ marginRight: 8 }}
+                                icon={<UserOutlined />}
+                                src={user?.avatar} // si tienes imagen, se muestra
+                            />
+                            {username}
+                        </span>
+                    }
+                >
+                    <Menu.Item key="logout">Logout</Menu.Item>
+                </Menu.SubMenu>
+            )}
+        </Menu>
     );
 }
 
