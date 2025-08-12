@@ -1,80 +1,164 @@
-import React from 'react';
-import { AppstoreOutlined, HomeOutlined, SearchOutlined, UserOutlined } from '@ant-design/icons';
-import { Menu, Avatar } from 'antd';
+import React, { useEffect, useState } from 'react';
+import { AppstoreOutlined, HomeOutlined, SearchOutlined, UserOutlined, BellOutlined } from '@ant-design/icons';
+import { Menu, Avatar, Badge, Dropdown, List, Spin } from 'antd';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logoutSuccess } from '../slices/authSlice';
+import axios from 'axios';
 
 function Navbar() {
-    const location = useLocation();
-    const navigate = useNavigate();
-    const dispatch = useDispatch();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
 
-    const isAuthenticated = useSelector((state) => state.auth.token !== null);
-    const user = useSelector((state) => state.auth.username);
-    const username = user || 'User';
+  const isAuthenticated = useSelector((state) => state.auth.token !== null);
+  const user = useSelector((state) => state.auth.username);
+  const token = useSelector((state) => state.auth.token);
+  const username = user || 'User';
 
-    const pathToKey = {
-        '/': 'home',
-        '/search': 'search',
-        '/profile': 'profile',
-        '/login': 'login',
-    };
+  const [notifications, setNotifications] = useState([]);
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
 
-    const selectedKey = pathToKey[location.pathname] || '';
+  const pathToKey = {
+    '/': 'home',
+    '/search': 'search',
+    '/profile': 'profile',
+    '/login': 'login',
+  };
 
-    const onClick = (e) => {
-        if (e.key === 'logout') {
-            dispatch(logoutSuccess());
-            navigate('/login');
-        }
-    };
+  const selectedKey = pathToKey[location.pathname] || '';
 
-    return (
-        <Menu
-            onClick={onClick}
-            selectedKeys={[selectedKey]}
-            mode="horizontal"
-            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-        >
-            {/* Left menu items */}
-            <div style={{ display: 'flex' }}>
-                <Menu.Item key="home" icon={<HomeOutlined />}>
-                    <Link to="/">Home</Link>
-                </Menu.Item>
-                <Menu.Item key="search" icon={<SearchOutlined />}>
-                    <Link to="/search">Search</Link>
-                </Menu.Item>
-                {!isAuthenticated && (
-                    <Menu.Item key="login">
-                        <Link to="/login">Login</Link>
-                    </Menu.Item>
-                )}
-            </div>
+  const onClick = (e) => {
+    if (e.key === 'logout') {
+      dispatch(logoutSuccess());
+      navigate('/login');
+    }
+  };
 
-            {/* Right user avatar */}
-            {isAuthenticated && (
-                <Menu.SubMenu
-                    key="user"
-                    title={
-                        <span
-                            onClick={() => navigate('/profile')}
-                            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-                        >
-                            <Avatar
-                                style={{ marginRight: 8 }}
-                                icon={<UserOutlined />}
-                                src={user?.avatar} // si tienes imagen, se muestra
-                            />
-                            {username}
-                        </span>
-                    }
+  // Fetch notifications from backend
+  const fetchNotifications = async () => {
+    if (!token) return;
+    setLoadingNotifications(true);
+    try {
+      const res = await axios.get('http://localhost:3001/notifications', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setNotifications(res.data);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    } finally {
+      setLoadingNotifications(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+
+    // Poll notifications every 10 seconds
+    const interval = setInterval(fetchNotifications, 10000);
+    return () => clearInterval(interval);
+  }, [token]);
+
+  const unreadCount = notifications.filter(n => !n.isRead).length;
+
+  // Dropdown menu for notifications list
+  const notificationMenu = (
+    <div style={{ maxHeight: 300, overflowY: 'auto', width: 300 }}>
+      {loadingNotifications ? (
+        <div style={{ textAlign: 'center', padding: 20 }}>
+          <Spin />
+        </div>
+      ) : notifications.length === 0 ? (
+        <p style={{ padding: 10 }}>No notifications</p>
+      ) : (
+        <List
+          itemLayout="horizontal"
+          dataSource={notifications}
+          renderItem={item => (
+            <List.Item
+              key={item._id}
+              style={{ backgroundColor: item.isRead ? 'white' : '#e6f7ff', cursor: 'pointer' }}
+              onClick={() => {
+                // Marca notificación como leída antes de navegar
+                axios.patch(`http://localhost:3001/notifications/${item._id}/read`, {}, {
+                  headers: { Authorization: `Bearer ${token}` }
+                }).catch(console.error);
+
+                // Navega según tipo de notificación
+                if (item.type === 'follow') {
+                  navigate(`/profile/${item.sender}`);
+                } else if (item.tweetId) {
+                  navigate(`/tweets/${item.tweetId}`);
+                }
+              }}
+            >
+              <List.Item.Meta
+                avatar={<Avatar>{item.sender?.charAt(0).toUpperCase() || '?'}</Avatar>}
+                title={`${item.sender} ${item.type}`}
+                description={item.tweetId ? 'On a tweet' : ''}
+              />
+            </List.Item>
+          )}
+        />
+      )}
+    </div>
+  );
+
+  return (
+    <Menu
+      onClick={onClick}
+      selectedKeys={[selectedKey]}
+      mode="horizontal"
+      style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+    >
+      {/* Left menu items */}
+      <div style={{ display: 'flex' }}>
+        <Menu.Item key="home" icon={<HomeOutlined />}>
+          <Link to="/">Home</Link>
+        </Menu.Item>
+        <Menu.Item key="search" icon={<SearchOutlined />}>
+          <Link to="/search">Search</Link>
+        </Menu.Item>
+        {!isAuthenticated && (
+          <Menu.Item key="login">
+            <Link to="/login">Login</Link>
+          </Menu.Item>
+        )}
+      </div>
+
+      {/* Right menu items */}
+      <div style={{ display: 'flex', alignItems: 'center' }}>
+        {isAuthenticated && (
+          <>
+            <Dropdown overlay={notificationMenu} trigger={['click']} placement="bottomRight">
+              <Badge count={unreadCount} overflowCount={99} offset={[0, 5]}>
+                <BellOutlined style={{ fontSize: 20, cursor: 'pointer', marginRight: 20 }} />
+              </Badge>
+            </Dropdown>
+
+            <Menu.SubMenu
+              key="user"
+              title={
+                <span
+                  onClick={() => navigate('/profile')}
+                  style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
                 >
-                    <Menu.Item key="logout">Logout</Menu.Item>
-                </Menu.SubMenu>
-            )}
-        </Menu>
-    );
+                  <Avatar
+                    style={{ marginRight: 8 }}
+                    icon={<UserOutlined />}
+                    src={user?.avatar} // si tienes imagen avatar
+                  />
+                  {username}
+                </span>
+              }
+            >
+              <Menu.Item key="logout">Logout</Menu.Item>
+            </Menu.SubMenu>
+          </>
+        )}
+      </div>
+    </Menu>
+  );
 }
 
 export default Navbar;

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
 import axios from 'axios';
 import {
   Card,
@@ -11,37 +12,51 @@ import {
 } from 'antd';
 import {
   LikeOutlined,
-  MessageOutlined,
   ShareAltOutlined,
+  RetweetOutlined
 } from '@ant-design/icons';
 
 const { Paragraph } = Typography;
 
 export default function TweetFeed() {
   const [tweets, setTweets] = useState([]);
+  const token = useSelector(state => state.auth.token);
+
+  const fetchTweets = async () => {
+    try {
+      const res = await axios.get('http://localhost:3001/tweets');
+      setTweets(res.data);
+    } catch (error) {
+      console.error('Error fetching tweets:', error);
+    }
+  };
 
   useEffect(() => {
-    const fetchTweets = async () => {
-      try {
-        const res = await axios.get('http://localhost:3001/tweets');
-        setTweets(res.data);
-      } catch (error) {
-        console.error('Error fetching tweets:', error);
-      }
-    };
-
     fetchTweets();
     const interval = setInterval(fetchTweets, 5000);
     return () => clearInterval(interval);
   }, []);
 
-  const handleLike = (tweetId) => {
-    message.success(`You liked tweet ${tweetId}`);
-    // Aquí puedes hacer POST /tweets/:id/like
+  const handleLike = async (tweetId) => {
+    if (!token) return message.error('Login required');
+    try {
+      await axios.post(`http://localhost:3001/tweets/${tweetId}/like`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      message.success('Toggled like');
+      fetchTweets();
+    } catch (err) { message.error('Error'); }
   };
 
-  const handleComment = (tweetId) => {
-    message.info(`Comment feature coming soon for tweet ${tweetId}`);
+  const retweet = async (id) => {
+    if (!token) return message.error('Login required');
+    try {
+      await axios.post(`http://localhost:3001/tweets/${id}/retweet`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      message.success('Retweeted');
+      fetchTweets();
+    } catch (err) { message.error('Error'); }
   };
 
   const handleShare = (tweetId) => {
@@ -55,20 +70,8 @@ export default function TweetFeed() {
         <Card
           key={tweet._id}
           actions={[
-            <Button
-              type="text"
-              icon={<LikeOutlined />}
-              onClick={() => handleLike(tweet._id)}
-            >
-              Like
-            </Button>,
-            <Button
-              type="text"
-              icon={<MessageOutlined />}
-              onClick={() => handleComment(tweet._id)}
-            >
-              Comment
-            </Button>,
+            <Button icon={<LikeOutlined />} onClick={() => handleLike(tweet._id)}>{tweet.likes?.length || 0}</Button>,
+            <Button icon={<RetweetOutlined />} onClick={() => retweet(tweet._id)}>{tweet.retweetCount || 0}</Button>,
             <Button
               type="text"
               icon={<ShareAltOutlined />}
