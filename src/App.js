@@ -9,10 +9,13 @@ import ProfileManagementPage from './pages/ProfileManagementPage';
 import SearchResultPage from './pages/SearchResultPage';
 import TweetDetailPage from './pages/TweetDetailPage';
 import Navbar from './components/Navbar';
+import PWAInstallPrompt from './components/PWAInstallPrompt';
+import NetworkStatus from './components/NetworkStatus';
 import { MessageProvider } from './context/MessageContext';
 const App = () => {
   return (
     <MessageProvider>
+      <NetworkStatus />
       <Navbar />
       <Routes>
         <Route path="/" element={<Homepage />} />
@@ -22,6 +25,7 @@ const App = () => {
         <Route path="/search" element={<SearchResultPage />} />
         <Route path="/tweets/:id" element={<TweetDetailPage />} />
       </Routes>
+      <PWAInstallPrompt />
     </MessageProvider>
   );
 }
