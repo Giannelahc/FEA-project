@@ -1,10 +1,25 @@
+// src/components/Navbar.js
 import React, { useEffect, useState } from 'react';
-import { AppstoreOutlined, HomeOutlined, SearchOutlined, UserOutlined, BellOutlined } from '@ant-design/icons';
-import { Menu, Avatar, Badge, Dropdown, List, Spin } from 'antd';
+import {
+  HomeOutlined,
+  SearchOutlined,
+  UserOutlined,
+  BellOutlined,
+} from '@ant-design/icons';
+import {
+  Menu,
+  Avatar,
+  Badge,
+  Dropdown,
+  List,
+  Spin,
+  Input,
+} from 'antd';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logoutSuccess } from '../slices/authSlice';
 import axios from 'axios';
+import io from 'socket.io-client';
 
 function Navbar() {
   const location = useLocation();
@@ -19,17 +34,26 @@ function Navbar() {
   const [notifications, setNotifications] = useState([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
 
+  // --- Search input state (embedded SearchBar) ---
+  const [q, setQ] = useState('');
+  const onSearch = (value) => {
+    const query = (value ?? q).trim();
+    if (!query) return;
+    navigate({ pathname: '/search', search: `?q=${encodeURIComponent(query)}` });
+  };
+
+  // highlight current tab
   const pathToKey = {
     '/': 'home',
     '/search': 'search',
     '/profile': 'profile',
     '/login': 'login',
   };
-
   const selectedKey = pathToKey[location.pathname] || '';
 
-  const onClick = (e) => {
+  const onMenuClick = (e) => {
     if (e.key === 'logout') {
+      // Clear redux + any persisted tokens
       dispatch(logoutSuccess());
       navigate('/login');
     }
@@ -52,50 +76,94 @@ function Navbar() {
   };
 
   useEffect(() => {
-    fetchNotifications();
+  if (!token) return;
+  fetchNotifications();
 
-    // Poll notifications every 10 seconds
-    const interval = setInterval(fetchNotifications, 10000);
-    return () => clearInterval(interval);
-  }, [token]);
+  const socket = io('http://localhost:3001', {
+    transports: ['websocket'],
+    auth: { token }
+  });
 
-  const unreadCount = notifications.filter(n => !n.isRead).length;
+  socket.on('connect', () => {
+    console.log('Connected to notifications socket');
+    socket.emit('register', username);
+  });
 
-  // Dropdown menu for notifications list
+  socket.on('notification', (notif) => {
+    setNotifications((prev) => [notif, ...prev]);
+  });
+
+  return () => {
+    socket.disconnect();
+  };
+}, [token, username]);
+
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
+
+  const markReadAndGo = async (item) => {
+    try {
+      await axios.patch(
+        `http://localhost:3001/notifications/${item._id}/read`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+    } catch (e) {
+      // noop
+    }
+
+    setNotifications(prev =>
+      prev.map(n =>
+        n._id === item._id ? { ...n, isRead: true } : n
+      )
+    );
+
+    // Navigate by type
+    if (item.type === 'follow') {
+      // Prefer an id field if backend provides it
+      const target = item.senderId || item.sender || '';
+      if (target) navigate(`/users/${encodeURIComponent(target)}`);
+      return;
+    }
+    if (item.tweetId) {
+      navigate(`/tweets/${encodeURIComponent(item.tweetId)}`);
+      return;
+    }
+  };
+
+  // Custom dropdown content for notifications
   const notificationMenu = (
-    <div style={{ maxHeight: 300, overflowY: 'auto', width: 300 }}>
+    <div style={{ maxHeight: 300, overflowY: 'auto', width: 320 }}>
       {loadingNotifications ? (
         <div style={{ textAlign: 'center', padding: 20 }}>
           <Spin />
         </div>
       ) : notifications.length === 0 ? (
-        <p style={{ padding: 10 }}>No notifications</p>
+        <p style={{ padding: 10, margin: 0 }}>No notifications</p>
       ) : (
         <List
           itemLayout="horizontal"
           dataSource={notifications}
-          renderItem={item => (
+          renderItem={(item) => (
             <List.Item
               key={item._id}
               style={{ backgroundColor: item.isRead ? 'white' : '#e6f7ff', cursor: 'pointer' }}
-              onClick={() => {
-                // Marca notificación como leída antes de navegar
-                axios.patch(`http://localhost:3001/notifications/${item._id}/read`, {}, {
-                  headers: { Authorization: `Bearer ${token}` }
-                }).catch(console.error);
-
-                // Navega según tipo de notificación
-                if (item.type === 'follow') {
-                  navigate(`/profile/${item.sender}`);
-                } else if (item.tweetId) {
-                  navigate(`/tweets/${item.tweetId}`);
-                }
-              }}
+              onClick={() => markReadAndGo(item)}
             >
               <List.Item.Meta
-                avatar={<Avatar>{item.sender?.charAt(0).toUpperCase() || '?'}</Avatar>}
-                title={`${item.sender} ${item.type}`}
-                description={item.tweetId ? 'On a tweet' : ''}
+                avatar={
+                  <Avatar>
+                    {(item.senderName || item.sender || '?')
+                      .toString()
+                      .charAt(0)
+                      .toUpperCase()}
+                  </Avatar>
+                }
+                title={`${item.senderName || item.sender || 'Someone'} ${item.type}`}
+                description={
+                  item.tweetId
+                    ? 'On a tweet'
+                    : item.message || item.createdAt
+                }
               />
             </List.Item>
           )}
@@ -106,19 +174,26 @@ function Navbar() {
 
   return (
     <Menu
-      onClick={onClick}
+      onClick={onMenuClick}
       selectedKeys={[selectedKey]}
       mode="horizontal"
-      style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+      style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        borderBottom: '1px solid #eee',
+      }}
     >
       {/* Left menu items */}
       <div style={{ display: 'flex' }}>
         <Menu.Item key="home" icon={<HomeOutlined />}>
           <Link to="/">Home</Link>
         </Menu.Item>
+
         <Menu.Item key="search" icon={<SearchOutlined />}>
           <Link to="/search">Search</Link>
         </Menu.Item>
+
         {!isAuthenticated && (
           <Menu.Item key="login">
             <Link to="/login">Login</Link>
@@ -130,9 +205,15 @@ function Navbar() {
       <div style={{ display: 'flex', alignItems: 'center' }}>
         {isAuthenticated && (
           <>
-            <Dropdown overlay={notificationMenu} trigger={['click']} placement="bottomRight">
+            <Dropdown
+              overlay={notificationMenu}
+              trigger={['click']}
+              placement="bottomRight"
+            >
               <Badge count={unreadCount} overflowCount={99} offset={[0, 5]}>
-                <BellOutlined style={{ fontSize: 20, cursor: 'pointer', marginRight: 20 }} />
+                <BellOutlined
+                  style={{ fontSize: 20, cursor: 'pointer', marginRight: 20 }}
+                />
               </Badge>
             </Dropdown>
 
@@ -141,12 +222,16 @@ function Navbar() {
               title={
                 <span
                   onClick={() => navigate('/profile')}
-                  style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                  style={{
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                  }}
                 >
                   <Avatar
                     style={{ marginRight: 8 }}
                     icon={<UserOutlined />}
-                    src={user?.avatar} // si tienes imagen avatar
+                    src={user?.avatar}
                   />
                   {username}
                 </span>
