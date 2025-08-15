@@ -68,29 +68,37 @@ export default function TweetFeed() {
     }
   };
 
-  const handleRetweet = async (tweetId) => {
+  const handleRetweet = async (tweetId) => { 
     if (!token) return message.error('Login required');
+
     try {
       const res = await axios.post(`http://localhost:3001/tweets/${tweetId}/retweet`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
+
+      const newRetweet = res.data; // Este es el tweet que se acaba de crear
+      const originalTweetId = newRetweet.originalTweetId; // ID del tweet original
+
       message.success('Retweeted');
 
-      // Actualiza localmente el tweet original con el nuevo contador de retweets
       setTweets(prev =>
-        prev.map(tweet =>
-          tweet._id === tweetId ? { ...tweet, retweetCount: res.data.retweetCount } : tweet
-        )
+        prev.map(tweet => {
+          if (tweet._id === originalTweetId) {
+            // Actualiza el contador de retweets usando el valor del backend
+            return { ...tweet, retweetCount: (tweet.retweetCount || 0) + 1 };
+          } 
+          return tweet;
+        })
       );
 
-      // Opcional: agregar el retweet recién creado al inicio del feed
-      setTweets(prev => [res.data, ...prev]);
+      // Agregar el retweet recién creado al inicio del feed
+      setTweets(prev => [newRetweet, ...prev]);
 
     } catch (err) {
       message.error('Error');
+      console.error(err);
     }
   };
-
   const handleShare = (tweetId) => {
     navigator.clipboard.writeText(`${window.location.origin}/tweets/${tweetId}`);
     message.success('Tweet link copied to clipboard');
