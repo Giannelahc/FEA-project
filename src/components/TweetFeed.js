@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
+import io from 'socket.io-client';
 import {
   Card,
   Avatar,
@@ -33,30 +34,61 @@ export default function TweetFeed() {
 
   useEffect(() => {
     fetchTweets();
-    const interval = setInterval(fetchTweets, 5000);
-    return () => clearInterval(interval);
+
+    const socket = io('http://localhost:3001', {
+      transports: ['websocket'],
+    });
+
+    socket.on('tweetCreated', (newTweet) => {
+      setTweets(prev => [newTweet, ...prev]);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
   }, []);
 
   const handleLike = async (tweetId) => {
     if (!token) return message.error('Login required');
     try {
-      await axios.post(`http://localhost:3001/tweets/${tweetId}/like`, {}, {
+      const res = await axios.post(`http://localhost:3001/tweets/${tweetId}/like`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       message.success('Toggled like');
-      fetchTweets();
-    } catch (err) { message.error('Error'); }
+
+      // Actualiza localmente el tweet con los likes nuevos
+      setTweets(prev =>
+        prev.map(tweet =>
+          tweet._id === tweetId ? { ...tweet, likes: res.data.likes } : tweet
+        )
+      );
+
+    } catch (err) {
+      message.error('Error');
+    }
   };
 
-  const retweet = async (id) => {
+  const handleRetweet = async (tweetId) => {
     if (!token) return message.error('Login required');
     try {
-      await axios.post(`http://localhost:3001/tweets/${id}/retweet`, {}, {
+      const res = await axios.post(`http://localhost:3001/tweets/${tweetId}/retweet`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       message.success('Retweeted');
-      fetchTweets();
-    } catch (err) { message.error('Error'); }
+
+      // Actualiza localmente el tweet original con el nuevo contador de retweets
+      setTweets(prev =>
+        prev.map(tweet =>
+          tweet._id === tweetId ? { ...tweet, retweetCount: res.data.retweetCount } : tweet
+        )
+      );
+
+      // Opcional: agregar el retweet recién creado al inicio del feed
+      setTweets(prev => [res.data, ...prev]);
+
+    } catch (err) {
+      message.error('Error');
+    }
   };
 
   const handleShare = (tweetId) => {
@@ -70,8 +102,12 @@ export default function TweetFeed() {
         <Card
           key={tweet._id}
           actions={[
-            <Button icon={<LikeOutlined />} onClick={() => handleLike(tweet._id)}>{tweet.likes?.length || 0}</Button>,
-            <Button icon={<RetweetOutlined />} onClick={() => retweet(tweet._id)}>{tweet.retweetCount || 0}</Button>,
+            <Button icon={<LikeOutlined />} onClick={() => handleLike(tweet._id)}>
+              {tweet.likes?.length || 0}
+            </Button>,
+            <Button icon={<RetweetOutlined />} onClick={() => handleRetweet(tweet._id)}>
+              {tweet.retweetCount || 0}
+            </Button>,
             <Button
               type="text"
               icon={<ShareAltOutlined />}
@@ -83,9 +119,7 @@ export default function TweetFeed() {
         >
           <Card.Meta
             avatar={
-              <Avatar>
-                {tweet.username?.charAt(0).toUpperCase() || '?'}
-              </Avatar>
+              <Avatar>{tweet.username?.charAt(0).toUpperCase() || '?'}</Avatar>
             }
             title={tweet.userName || 'Anonymous'}
             description={<Paragraph>{tweet.content}</Paragraph>}

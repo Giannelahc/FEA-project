@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { AppstoreOutlined, HomeOutlined, SearchOutlined, UserOutlined, BellOutlined } from '@ant-design/icons';
+import { HomeOutlined, SearchOutlined, UserOutlined, BellOutlined } from '@ant-design/icons';
 import { Menu, Avatar, Badge, Dropdown, List, Spin } from 'antd';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logoutSuccess } from '../slices/authSlice';
 import axios from 'axios';
+import io from 'socket.io-client';
 
 function Navbar() {
   const location = useLocation();
@@ -35,7 +36,6 @@ function Navbar() {
     }
   };
 
-  // Fetch notifications from backend
   const fetchNotifications = async () => {
     if (!token) return;
     setLoadingNotifications(true);
@@ -52,16 +52,30 @@ function Navbar() {
   };
 
   useEffect(() => {
-    fetchNotifications();
+  if (!token) return;
+  fetchNotifications();
 
-    // Poll notifications every 10 seconds
-    const interval = setInterval(fetchNotifications, 10000);
-    return () => clearInterval(interval);
-  }, [token]);
+  const socket = io('http://localhost:3001', {
+    transports: ['websocket'],
+    auth: { token }
+  });
+
+  socket.on('connect', () => {
+    console.log('Connected to notifications socket');
+    socket.emit('register', username);
+  });
+
+  socket.on('notification', (notif) => {
+    setNotifications((prev) => [notif, ...prev]);
+  });
+
+  return () => {
+    socket.disconnect();
+  };
+}, [token, username]);
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
-  // Dropdown menu for notifications list
   const notificationMenu = (
     <div style={{ maxHeight: 300, overflowY: 'auto', width: 300 }}>
       {loadingNotifications ? (
@@ -79,12 +93,16 @@ function Navbar() {
               key={item._id}
               style={{ backgroundColor: item.isRead ? 'white' : '#e6f7ff', cursor: 'pointer' }}
               onClick={() => {
-                // Marca notificación como leída antes de navegar
                 axios.patch(`http://localhost:3001/notifications/${item._id}/read`, {}, {
                   headers: { Authorization: `Bearer ${token}` }
                 }).catch(console.error);
 
-                // Navega según tipo de notificación
+                setNotifications(prev =>
+                  prev.map(n =>
+                    n._id === item._id ? { ...n, isRead: true } : n
+                  )
+                );
+
                 if (item.type === 'follow') {
                   navigate(`/profile/${item.sender}`);
                 } else if (item.tweetId) {
@@ -111,7 +129,6 @@ function Navbar() {
       mode="horizontal"
       style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
     >
-      {/* Left menu items */}
       <div style={{ display: 'flex' }}>
         <Menu.Item key="home" icon={<HomeOutlined />}>
           <Link to="/">Home</Link>
@@ -126,7 +143,6 @@ function Navbar() {
         )}
       </div>
 
-      {/* Right menu items */}
       <div style={{ display: 'flex', alignItems: 'center' }}>
         {isAuthenticated && (
           <>
@@ -146,7 +162,7 @@ function Navbar() {
                   <Avatar
                     style={{ marginRight: 8 }}
                     icon={<UserOutlined />}
-                    src={user?.avatar} // si tienes imagen avatar
+                    src={user?.avatar}
                   />
                   {username}
                 </span>
