@@ -1,42 +1,45 @@
-import { useSelector } from 'react-redux';
-import React, { useState } from 'react';
-import { Row, Col, Tabs, Divider } from 'antd';
-import TweetForm from '../components/TweetForm';
-import TweetFeed from '../components/TweetFeed';
+// src/pages/HomePage.js
+import React, { useState } from "react";
+import { useSelector } from "react-redux";
+import { Row, Col, Tabs, Divider } from "antd";
+import TweetForm from "../components/TweetForm";
+import TweetFeed from "../components/TweetFeed";
 
-const { TabPane } = Tabs;
+export default function HomePage() {
+  // safe selectors (won’t throw if slice not mounted yet)
+  const user = useSelector((s) => s.auth?.user || null);
+  //const feed = useSelector((s) => (s.tweets ? s.tweets.feed : [])) || [];
+  const feed = [];
 
-const HomePage = () => {
-  const user = useSelector((state) => state.auth.user);
-  const feed = useSelector((state) => state.tweets.feed);
-  const [activeTab, setActiveTab] = useState('forYou');
+  const [activeTab, setActiveTab] = useState("forYou");
+
+  // Ant Design v5 Tabs use `items` instead of <TabPane>
+  const tabItems = [
+    { key: "forYou", label: "For you", children: null },
+    { key: "following", label: "Following", children: null },
+  ];
 
   return (
-    <div style={{ maxWidth: 600, margin: '0 auto', padding: '20px' }}>
+    <div style={{ maxWidth: 600, margin: "0 auto", padding: 20 }}>
       {/* Tabs: For you | Following */}
       <Tabs
-        defaultActiveKey="forYou"
-        centered
-        onChange={(key) => setActiveTab(key)}
-        tabBarStyle={{ fontSize: '16px', fontWeight: 'bold' }}
-      >
-        <TabPane tab="For you" key="forYou" />
-        <TabPane tab="Following" key="following" />
-      </Tabs>
+        activeKey={activeTab}
+        onChange={setActiveTab}
+        items={tabItems}
+        style={{ marginBottom: 12 }}
+      />
 
-      <Divider />
+      <Divider style={{ margin: "8px 0 16px" }} />
 
-      {/* Post Form centered below the tabs */}
+      {/* Post Form */}
       <Row justify="center" style={{ marginBottom: 20 }}>
         <Col span={24}>
-          <TweetForm />
+          <TweetForm user={user} />
         </Col>
       </Row>
 
-      {/* List of Tweets */}
-      <TweetFeed filter={activeTab} />
+      {/* Tweets list */}
+      <TweetFeed filter={activeTab} feed={feed} />
     </div>
   );
-};
-
-export default HomePage;
+}
