@@ -1,15 +1,11 @@
-// src/store/store.js
+// src/store/index.js
 import { configureStore } from '@reduxjs/toolkit';
+import users from '../slices/usersSlice';
 import auth from '../slices/authSlice';
 import tweet from '../slices/tweetSlice';
-import users from '../slices/usersSlice';
 
 const store = configureStore({
-  reducer: {
-    auth,
-    tweet,
-    users,
-  },
+  reducer: { users, auth, tweet },
 });
 
 export default store;
