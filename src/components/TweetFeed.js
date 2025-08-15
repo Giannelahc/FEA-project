@@ -32,9 +32,7 @@ export default function TweetFeed() {
   };
 
   useEffect(() => {
-    fetchTweets();
-    const interval = setInterval(fetchTweets, 5000);
-    return () => clearInterval(interval);
+    fetchTweets();;
   }, []);
 
   const handleLike = async (tweetId) => {
