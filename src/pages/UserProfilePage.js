@@ -1,5 +1,5 @@
 // src/pages/UserProfilePage.js
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, use } from 'react';
 import {
   Card,
   Avatar,
@@ -64,15 +64,15 @@ export default function UserProfilePage() {
   }, [API_BASE, token, messageApi]);
 
   // Followers / Following fetchers
-  const fetchFollowers = useCallback(async (uid) => {
+  const fetchFollowers = useCallback(async () => {
     setRelLoading((s) => ({ ...s, followers: true }));
     try {
-      const res = await fetch(`${API_BASE}/users/${uid}/followers`, {
+      const res = await fetch(`${API_BASE}/follow/followers`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Failed to load followers');
-      setFollowers(Array.isArray(data.results) ? data.results : data);
+      setFollowers(Array.isArray(data.items) ? data.items : data);
     } catch (e) {
       messageApi.error(e.message || 'Failed to load followers');
     } finally {
@@ -80,15 +80,15 @@ export default function UserProfilePage() {
     }
   }, [API_BASE, token, messageApi]);
 
-  const fetchFollowing = useCallback(async (uid) => {
+  const fetchFollowing = useCallback(async () => {
     setRelLoading((s) => ({ ...s, following: true }));
     try {
-      const res = await fetch(`${API_BASE}/users/${uid}/following`, {
+      const res = await fetch(`${API_BASE}/follow/following`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Failed to load following');
-      setFollowing(Array.isArray(data.results) ? data.results : data);
+      setFollowing(Array.isArray(data.items) ? data.items : data);
     } catch (e) {
       messageApi.error(e.message || 'Failed to load following');
     } finally {
@@ -98,7 +98,13 @@ export default function UserProfilePage() {
 
   useEffect(() => {
     fetchProfile();
+    
   }, [fetchProfile]);
+
+  useEffect(() => { 
+    fetchFollowing();
+    fetchFollowers();
+  }, [fetchFollowing, fetchFollowers]);
 
   const handleSave = async () => {
     try {
@@ -235,11 +241,11 @@ export default function UserProfilePage() {
             <br />
             {/* Followers / Following quick actions */}
             <Button type="link" onClick={openFollowersDrawer} style={{ paddingLeft: 0 }}>
-              <b>{user.followers?.length || 0}</b> followers
+              <b>{followers?.length || 0}</b> followers
             </Button>
             ·
             <Button type="link" onClick={openFollowingDrawer}>
-              <b>{user.following?.length || 0}</b> following
+              <b>{following?.length || 0}</b> following
             </Button>
           </div>
         )}
