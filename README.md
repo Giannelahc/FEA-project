@@ -45,7 +45,14 @@ src/
 │   ├── tweet.controller.ts
 │   ├── tweet.service.ts
 │   └── tweet.schema.ts
-├── notifications/        # Real-time notifications
+├── follows/        # follows
+follows
+│   ├── follows.controller.ts
+│   ├── follows.module.ts
+│   ├── follows.service.ts
+│   └── follows.schema.ts
+├── notifications/         # Real-time
+notifications
 │   ├── notifications.controller.ts
 │   ├── notifications.service.ts
 │   ├── notifications.gateway.ts
